@@ -1,4 +1,4 @@
-package com.casl
+package com.michaelsiddi.casl
 
 /**
  * Efficient storage and retrieval of rules optimized for permission checks.

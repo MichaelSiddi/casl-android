@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.casl"
+    namespace = "com.michaelsiddi.casl"
     compileSdk = 34
 
     defaultConfig {

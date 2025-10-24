@@ -1,8 +1,10 @@
-# CASL Android Authorization Library
+# CASL Android
 
 [![](https://jitpack.io/v/michaelsiddi/casl-android.svg)](https://jitpack.io/#michaelsiddi/casl-android)
 
-Attribute-based access control (ABAC) authorization library for Android with full Java and Kotlin compatibility.
+**Isomorphic authorization library for Android**
+
+CASL (pronounced "castle") is an Android port of the popular [CASL JavaScript library](https://casl.js.org), providing declarative authorization and permission management with full Java and Kotlin compatibility.
 
 ## Features
 
@@ -40,7 +42,7 @@ dependencies {
 
 ```kotlin
 dependencies {
-    implementation("com.casl:casl-android:1.0.0")
+    implementation("com.michaelsiddi.casl:casl-android:1.0.0")
 }
 ```
 
@@ -55,7 +57,7 @@ See [JITPACK.md](JITPACK.md) for detailed integration instructions.
 ### Kotlin
 
 ```kotlin
-import com.casl.Ability
+import com.michaelsiddi.casl.Ability
 
 // Define rules
 val ability = Ability.builder()
@@ -73,7 +75,7 @@ if (ability.can("read", blogPost)) {
 ### Java
 
 ```java
-import com.casl.Ability;
+import com.michaelsiddi.casl.Ability;
 import java.util.Map;
 
 // Define rules
@@ -179,6 +181,16 @@ All `Ability` methods are thread-safe and can be called from any thread. Rule up
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details
+
+## Acknowledgments
+
+CASL Android is a port of [CASL JavaScript](https://casl.js.org) by [Sergii Stotskyi](https://github.com/stalniy).
+
+## Related Projects
+
+- [CASL JavaScript](https://casl.js.org) - Original JavaScript implementation
+- [@casl/ability](https://www.npmjs.com/package/@casl/ability) - Core JavaScript package
+- [CASL Swift](https://github.com/michaelsiddi/casl-swift) - iOS/macOS port
 
 ## Support
 

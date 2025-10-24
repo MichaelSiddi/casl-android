@@ -1,10 +1,10 @@
 @file:JvmName("CaslDsl")
 
-package com.casl.extensions
+package com.michaelsiddi.casl.extensions
 
-import com.casl.Ability
-import com.casl.AbilityBuilder
-import com.casl.RawRule
+import com.michaelsiddi.casl.Ability
+import com.michaelsiddi.casl.AbilityBuilder
+import com.michaelsiddi.casl.RawRule
 
 /**
  * DSL function for building abilities with lambda syntax.

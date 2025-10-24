@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.casl.sample"
+    namespace = "com.michaelsiddi.casl.sample"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.casl.sample"
+        applicationId = "com.michaelsiddi.casl.sample"
         minSdk = 21
         targetSdk = 34
         versionCode = 1

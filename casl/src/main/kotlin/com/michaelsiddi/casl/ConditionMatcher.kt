@@ -1,4 +1,4 @@
-package com.casl
+package com.michaelsiddi.casl
 
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible

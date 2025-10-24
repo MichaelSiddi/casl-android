@@ -1,4 +1,4 @@
-package com.casl
+package com.michaelsiddi.casl
 
 /**
  * Internal representation of an authorization rule.

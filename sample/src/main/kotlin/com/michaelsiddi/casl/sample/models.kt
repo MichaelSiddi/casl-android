@@ -1,4 +1,4 @@
-package com.casl.sample
+package com.michaelsiddi.casl.sample
 
 /**
  * Sample domain models for demonstrating CASL authorization.

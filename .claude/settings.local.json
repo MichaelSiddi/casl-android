@@ -12,7 +12,9 @@
       "Bash(gradle:*)",
       "Read(//Users/michaelsiddi/.m2/repository/com/casl/casl-android/1.0.0/**)",
       "Bash(cat:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

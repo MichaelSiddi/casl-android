@@ -1,13 +1,13 @@
-package com.casl.sample
+package com.michaelsiddi.casl.sample
 
 import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.casl.Ability
-import com.casl.RawRule
-import com.casl.extensions.buildAbility
-import com.casl.extensions.filterBySubject
-import com.casl.extensions.onlyPermissions
+import com.michaelsiddi.casl.Ability
+import com.michaelsiddi.casl.RawRule
+import com.michaelsiddi.casl.extensions.buildAbility
+import com.michaelsiddi.casl.extensions.filterBySubject
+import com.michaelsiddi.casl.extensions.onlyPermissions
 
 /**
  * Sample app demonstrating CASL Android Authorization Library usage.

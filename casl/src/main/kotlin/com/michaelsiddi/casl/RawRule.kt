@@ -1,4 +1,4 @@
-package com.casl
+package com.michaelsiddi.casl
 
 import org.json.JSONArray
 import org.json.JSONObject

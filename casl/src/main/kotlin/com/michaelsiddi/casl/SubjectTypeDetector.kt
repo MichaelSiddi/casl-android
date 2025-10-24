@@ -1,4 +1,4 @@
-package com.casl
+package com.michaelsiddi.casl
 
 /**
  * Utility for detecting subject type from instances.
