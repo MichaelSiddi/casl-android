@@ -1,0 +1,41 @@
+# Kotlin/Android
+build/
+out/
+.gradle/
+.idea/
+*.class
+*.jar
+*.iml
+*.log
+.env*
+
+# Android specific
+local.properties
+*.apk
+*.ap_
+*.dex
+captures/
+.externalNativeBuild
+.cxx
+
+# Gradle
+.gradle
+/build
+*/build
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.ipr
+*~
+*.swp
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Other
+*.tmp
+.vscode/
