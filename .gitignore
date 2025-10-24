@@ -40,3 +40,8 @@ Thumbs.db
 # Other
 *.tmp
 .vscode/
+
+# Development tools and specs
+.specify/
+.claude/
+spec/
