@@ -78,10 +78,11 @@ public object ConditionMatcher {
     }
 
     /**
-     * Deep equality comparison with type coercion.
+     * Deep equality comparison with type coercion and MongoDB-style operator support.
      *
      * Handles:
      * - Null values
+     * - MongoDB-style operators ($in, $gt, $lt, etc.)
      * - Numeric type coercion
      * - Nested maps
      * - Nested lists
@@ -91,6 +92,8 @@ public object ConditionMatcher {
     private fun deepEquals(expected: Any?, actual: Any?): Boolean = when {
         expected == null && actual == null -> true
         expected == null || actual == null -> false
+        // Check for MongoDB-style operators
+        expected is Map<*, *> && isOperatorMap(expected) -> matchOperators(expected, actual)
         expected::class == actual::class -> expected == actual
         isNumeric(expected) && isNumeric(actual) -> numericEquals(expected, actual)
         expected is Map<*, *> && actual is Map<*, *> -> mapsEqual(expected, actual)
@@ -101,6 +104,128 @@ public object ConditionMatcher {
         }
         expected is List<*> && actual is List<*> -> listsEqual(expected, actual)
         else -> expected == actual
+    }
+
+    /**
+     * Check if a map contains MongoDB-style operators.
+     */
+    private fun isOperatorMap(map: Map<*, *>): Boolean {
+        return map.keys.any { it is String && it.toString().startsWith("$") }
+    }
+
+    /**
+     * Match value against MongoDB-style operators.
+     *
+     * Supported operators:
+     * - $eq: equals
+     * - $ne: not equals
+     * - $gt: greater than
+     * - $gte: greater than or equals
+     * - $lt: less than
+     * - $lte: less than or equals
+     * - $in: in array
+     * - $nin: not in array
+     * - $exists: field exists
+     * - $regex: regex pattern matching
+     * - $size: array size
+     * - $all: array contains all elements
+     * - $elemMatch: array element matches condition
+     */
+    private fun matchOperators(operators: Map<*, *>, actual: Any?): Boolean {
+        return operators.all { (op, value) ->
+            val operator = op.toString()
+            when (operator) {
+                "\$eq" -> deepEquals(value, actual)
+                "\$ne" -> !deepEquals(value, actual)
+                "\$gt" -> compareNumbers(actual, value) { a, b -> a > b }
+                "\$gte" -> compareNumbers(actual, value) { a, b -> a >= b }
+                "\$lt" -> compareNumbers(actual, value) { a, b -> a < b }
+                "\$lte" -> compareNumbers(actual, value) { a, b -> a <= b }
+                "\$in" -> matchIn(actual, value)
+                "\$nin" -> !matchIn(actual, value)
+                "\$exists" -> {
+                    val shouldExist = value as? Boolean ?: true
+                    (actual != null) == shouldExist
+                }
+                "\$regex" -> matchRegex(actual, value)
+                "\$size" -> matchSize(actual, value)
+                "\$all" -> matchAll(actual, value)
+                "\$elemMatch" -> matchElemMatch(actual, value)
+                else -> {
+                    // Unknown operator, treat as regular field
+                    deepEquals(value, actual)
+                }
+            }
+        }
+    }
+
+    /**
+     * Compare numbers with a comparison function.
+     */
+    private fun compareNumbers(actual: Any?, expected: Any?, compare: (Double, Double) -> Boolean): Boolean {
+        if (actual == null || expected == null) return false
+        if (!isNumeric(actual) || !isNumeric(expected)) return false
+        return compare(toDouble(actual), toDouble(expected))
+    }
+
+    /**
+     * Match $in operator - check if value is in array.
+     */
+    private fun matchIn(actual: Any?, expected: Any?): Boolean {
+        if (expected !is List<*>) return false
+        return expected.any { deepEquals(it, actual) }
+    }
+
+    /**
+     * Match $regex operator - check if string matches regex.
+     */
+    private fun matchRegex(actual: Any?, pattern: Any?): Boolean {
+        if (actual !is String || pattern !is String) return false
+        return try {
+            Regex(pattern).matches(actual)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Match $size operator - check array size.
+     */
+    private fun matchSize(actual: Any?, expected: Any?): Boolean {
+        if (actual !is List<*> || expected == null || !isNumeric(expected)) return false
+        return actual.size == (expected as Number).toInt()
+    }
+
+    /**
+     * Match $all operator - check if array contains all elements.
+     */
+    private fun matchAll(actual: Any?, expected: Any?): Boolean {
+        if (actual !is List<*> || expected !is List<*>) return false
+        return expected.all { expectedItem ->
+            actual.any { actualItem -> deepEquals(expectedItem, actualItem) }
+        }
+    }
+
+    /**
+     * Match $elemMatch operator - check if array has element matching condition.
+     */
+    private fun matchElemMatch(actual: Any?, expected: Any?): Boolean {
+        if (actual !is List<*>) return false
+        if (expected !is Map<*, *>) return false
+
+        return actual.any { element ->
+            if (element == null) return@any false
+            val elementFields = when (element) {
+                is Map<*, *> -> element.mapKeys { it.key.toString() }.mapValues { it.value }
+                else -> extractFields(element)
+            }
+            // Check if all conditions in expected match the element
+            expected.all { (key, value) ->
+                val keyStr = key.toString()
+                val actualValue = elementFields[keyStr]
+                deepEquals(value, actualValue)
+            }
+        }
     }
 
     /**
@@ -130,7 +255,9 @@ public object ConditionMatcher {
      * Deep equality for maps.
      */
     private fun mapsEqual(expected: Map<*, *>, actual: Map<*, *>): Boolean {
-        if (expected.size != actual.size) return false
+        // Expected map can have fewer keys than actual when matching conditions
+        // (actual object may have more fields than what we're checking)
+        // Only check that all expected keys exist and match in actual
         return expected.all { (key, value) ->
             actual.containsKey(key) && deepEquals(value, actual[key])
         }
