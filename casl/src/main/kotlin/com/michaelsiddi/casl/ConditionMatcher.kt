@@ -19,7 +19,7 @@ public object ConditionMatcher {
     /**
      * Check if subject matches all conditions.
      *
-     * @param conditions Map of field names to expected values
+     * @param conditions Map of field names to expected values (supports dot notation)
      * @param subject The subject to check conditions against
      * @return true if all conditions match, false otherwise
      */
@@ -30,9 +30,53 @@ public object ConditionMatcher {
         val subjectFields = extractFields(subject)
 
         return conditions.all { (key, expectedValue) ->
-            val actualValue = subjectFields[key]
+            // Support dot notation for nested field access
+            val actualValue = if (key.contains('.')) {
+                getNestedValue(subjectFields, key)
+            } else {
+                subjectFields[key]
+            }
             deepEquals(expectedValue, actualValue)
         }
+    }
+
+    /**
+     * Get nested value using dot notation (e.g., "author.id" or "comments.0.text").
+     *
+     * @param obj The object to extract from
+     * @param path Dot-separated path (e.g., "author.id")
+     * @return The value at the path, or null if not found
+     */
+    private fun getNestedValue(obj: Any?, path: String): Any? {
+        if (obj == null) return null
+
+        val parts = path.split('.')
+        var current: Any? = obj
+
+        for (part in parts) {
+            when (current) {
+                null -> return null
+                is Map<*, *> -> {
+                    current = current[part]
+                }
+                is List<*> -> {
+                    // Try to parse as array index
+                    val index = part.toIntOrNull()
+                    if (index != null && index >= 0 && index < current.size) {
+                        current = current[index]
+                    } else {
+                        return null
+                    }
+                }
+                else -> {
+                    // Try to extract field from object
+                    val fields = extractFields(current)
+                    current = fields[part]
+                }
+            }
+        }
+
+        return current
     }
 
     /**
@@ -90,10 +134,11 @@ public object ConditionMatcher {
      * - Standard equality
      */
     private fun deepEquals(expected: Any?, actual: Any?): Boolean = when {
+        // Check for MongoDB-style operators FIRST (before null checks)
+        // This allows operators like $exists to handle null values
+        expected is Map<*, *> && isOperatorMap(expected) -> matchOperators(expected, actual)
         expected == null && actual == null -> true
         expected == null || actual == null -> false
-        // Check for MongoDB-style operators
-        expected is Map<*, *> && isOperatorMap(expected) -> matchOperators(expected, actual)
         expected::class == actual::class -> expected == actual
         isNumeric(expected) && isNumeric(actual) -> numericEquals(expected, actual)
         expected is Map<*, *> && actual is Map<*, *> -> mapsEqual(expected, actual)
