@@ -57,6 +57,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No async I/O operations (permission checks are CPU-bound)
 - Reflection-based field extraction (consider performance for hot paths)
 
+## [2.1.0] - 2025-10-27
+
+### Added
+- **Field Pattern Matching with Wildcards**: Support for advanced field permission patterns
+  - Single-level wildcards: `author.*` matches any immediate child field
+  - Multi-level wildcards: `author.**` matches fields at any depth
+  - Wildcards at start: `*.name` or `**.name` for matching across parent objects
+  - Prefix matching: `street*` matches fields starting with "street"
+  - New `FieldMatcher` utility for efficient pattern matching with regex generation
+- **ForbiddenError Auto-Reason**: Automatic extraction of `reason` from inverted rules
+  - Added `reason` parameter to `can()` and `cannot()` builder methods
+  - ForbiddenError automatically uses rule reason when permission denied
+  - Improved error messages for better user experience
+- **rulesToFields Utility**: Extract default field values from authorization rules
+  - Useful for form initialization based on user permissions
+  - Supports dot notation for nested fields (`author.address.city`)
+  - Automatically skips MongoDB query operators
+  - New `RulesToFields.kt` in extra utilities package
+
+### Fixed
+- **ForbiddenError.setDefaultMessage**: Fixed global default message generator
+  - Now properly called during message generation, not initialization
+  - Correctly accesses `action`, `subject`, `subjectType`, and `field` properties
+  - Both static string and function generators now work correctly
+
+### Enhanced
+- **Rule**: Added `reason` property for explanatory messages on prohibited actions
+- **RawRule**: Added `reason` property with JSON serialization/deserialization support
+- **AbilityBuilder**: All `can()` and `cannot()` methods now support optional `reason` parameter
+
+### Test Coverage
+- Added 39 new tests (217 total tests, up from 178)
+  - FieldMatcher unit tests: 9 tests
+  - FieldPattern integration tests: 14 tests
+  - RulesToFields utility tests: 13 tests
+  - ForbiddenError enhancements: 6 tests
+
+### Performance
+- Field pattern matching optimized with lazy initialization
+- Non-wildcard patterns use fast set lookup (no regex overhead)
+- Wildcard patterns compiled once and cached per rule
+
+### Breaking Changes
+- None - All changes are backward compatible
+- Existing code continues to work without modifications
+- New features are opt-in through additional parameters
+
+## [2.0.0] - 2025-10-24
+
+### Added
+- Initial release with core features
+- Thread-safe rule management
+- Attribute-based conditions
+- Field-level permissions
+- JSON serialization
+
 ## [Unreleased]
 
 ### Planned
@@ -69,4 +125,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **2.1.0** (2025-10-27): Field pattern matching, auto-reason, rulesToFields utility, setDefaultMessage fix
+- **2.0.0** (2025-10-24): Major release with enhanced features
 - **1.0.0** (2025-10-23): Initial release with full feature parity to iOS CASL library

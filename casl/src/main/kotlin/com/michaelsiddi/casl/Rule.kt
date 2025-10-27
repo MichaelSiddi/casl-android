@@ -11,14 +11,20 @@ package com.michaelsiddi.casl
  * @property conditions Optional attribute matchers for conditional rules
  * @property fields Optional field restrictions (null means all fields)
  * @property inverted True for "cannot" rules, false for "can" rules
+ * @property reason Optional explanation for why the rule exists
  */
 internal data class Rule(
     val action: Any, // Can be String or List<String>
     val subjectType: String,
     val conditions: Map<String, Any?>? = null,
     val fields: Set<String>? = null,
-    val inverted: Boolean = false
+    val inverted: Boolean = false,
+    val reason: String? = null
 ) {
+    // Lazy-initialized field matcher for wildcard pattern support
+    private val fieldMatcher: ((String) -> Boolean)? by lazy {
+        fields?.let { FieldMatcher.createMatcher(it.toList()) }
+    }
     init {
         when (action) {
             is String -> require(action.isNotBlank()) { "action must not be blank" }
@@ -103,6 +109,13 @@ internal data class Rule(
      *
      * Note: When field is null (resource-level check) and this rule has field restrictions,
      * inverted rules return false to allow checking to continue to regular rules.
+     *
+     * Supports wildcard patterns:
+     * - `author.*` - Matches any 1st level field under author
+     * - `author.**` - Matches any field at any depth under author
+     * - `*.name` - Matches name field in any 1st level object
+     * - `**.name` - Matches name field at any depth
+     * - `street*` - Matches fields starting with "street"
      */
     fun matchesField(field: String?): Boolean {
         if (fields == null) return true // No field restriction = applies to all fields
@@ -113,7 +126,8 @@ internal data class Rule(
             return !inverted
         }
 
-        return field in fields
+        // Use field matcher which supports wildcard patterns
+        return fieldMatcher?.invoke(field) ?: false
     }
 
     /**
@@ -127,7 +141,8 @@ internal data class Rule(
             subject = subjectType,
             conditions = conditions,
             fields = fields?.toList(),
-            inverted = inverted
+            inverted = inverted,
+            reason = reason
         )
     }
 }

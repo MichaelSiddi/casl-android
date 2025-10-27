@@ -241,4 +241,136 @@ class ForbiddenErrorTest {
         val result3 = error.unlessCan("update", post)
         assertNull(result3)
     }
+
+    @Test
+    fun `uses reason from forbidden rule as error message`() {
+        val noCardMessage = "No credit card provided"
+        val ability = Ability.builder()
+            .cannot("update", "Post", reason = noCardMessage)
+            .build()
+
+        val error = ForbiddenError(ability)
+
+        val thrownError = assertFailsWith<ForbiddenError> {
+            error.throwUnlessCan("update", "Post")
+        }
+
+        assertEquals(noCardMessage, thrownError.message)
+    }
+
+    @Test
+    fun `custom message overrides rule reason`() {
+        val reasonMessage = "No credit card provided"
+        val customMessage = "Custom error message"
+        val ability = Ability.builder()
+            .cannot("update", "Post", reason = reasonMessage)
+            .build()
+
+        val error = ForbiddenError(ability)
+        error.setMessage(customMessage)
+
+        val thrownError = assertFailsWith<ForbiddenError> {
+            error.throwUnlessCan("update", "Post")
+        }
+
+        assertEquals(customMessage, thrownError.message)
+    }
+
+    @Test
+    fun `setDefaultMessage sets global default message from function`() {
+        // Set global default message generator
+        ForbiddenError.setDefaultMessage { error ->
+            "error -> ${error.action}-${error.subjectType}"
+        }
+
+        try {
+            val ability = setupAbility()
+            val error = ForbiddenError(ability)
+
+            val thrownError = assertFailsWith<ForbiddenError> {
+                error.throwUnlessCan("archive", "Post")
+            }
+
+            assertEquals("error -> archive-Post", thrownError.message)
+        } finally {
+            // Reset to default
+            ForbiddenError.setDefaultMessage(null as String?)
+        }
+    }
+
+    @Test
+    fun `setDefaultMessage with static string sets global default message`() {
+        val staticMessage = "Global custom error message"
+
+        // Set global default message as static string
+        ForbiddenError.setDefaultMessage(staticMessage)
+
+        try {
+            val ability = setupAbility()
+            val error = ForbiddenError(ability)
+
+            val thrownError = assertFailsWith<ForbiddenError> {
+                error.throwUnlessCan("archive", "Post")
+            }
+
+            assertEquals(staticMessage, thrownError.message)
+        } finally {
+            // Reset to default
+            ForbiddenError.setDefaultMessage(null as String?)
+        }
+    }
+
+    @Test
+    fun `instance setMessage overrides global default message`() {
+        val globalMessage = "Global error"
+        val instanceMessage = "Instance error"
+
+        // Set global default message
+        ForbiddenError.setDefaultMessage(globalMessage)
+
+        try {
+            val ability = setupAbility()
+            val error = ForbiddenError(ability)
+
+            // Override with instance message
+            error.setMessage(instanceMessage)
+
+            val thrownError = assertFailsWith<ForbiddenError> {
+                error.throwUnlessCan("archive", "Post")
+            }
+
+            assertEquals(instanceMessage, thrownError.message)
+        } finally {
+            // Reset to default
+            ForbiddenError.setDefaultMessage(null as String?)
+        }
+    }
+
+    @Test
+    fun `global default message applies to new error instances`() {
+        ForbiddenError.setDefaultMessage { error ->
+            "custom: ${error.action} on ${error.subjectType}"
+        }
+
+        try {
+            val ability = setupAbility()
+
+            // First error instance
+            val error1 = ForbiddenError(ability)
+            val thrown1 = assertFailsWith<ForbiddenError> {
+                error1.throwUnlessCan("delete", "Post")
+            }
+            assertEquals("custom: delete on Post", thrown1.message)
+
+            // Second error instance
+            val error2 = ForbiddenError(ability)
+            val thrown2 = assertFailsWith<ForbiddenError> {
+                error2.throwUnlessCan("archive", "Post")
+            }
+            assertEquals("custom: archive on Post", thrown2.message)
+        } finally {
+            // Reset to default
+            ForbiddenError.setDefaultMessage(null as String?)
+        }
+    }
 }

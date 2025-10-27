@@ -65,6 +65,12 @@ public class ForbiddenError(
         this.subjectType = SubjectTypeDetector.detectType(subject)
         this.field = field
 
+        // Try to get the reason from the relevant rule
+        val relevantRule = ability.relevantRuleFor(action, subject, field)
+        if (relevantRule != null && relevantRule.reason != null && customMessage == null) {
+            customMessage = relevantRule.reason
+        }
+
         return this
     }
 
@@ -100,6 +106,11 @@ public class ForbiddenError(
         get() = customMessage ?: getDefaultErrorMessage()
 
     private fun getDefaultErrorMessage(): String {
+        // Use global default message generator if set
+        if (defaultMessageGenerator != null) {
+            return defaultMessageGenerator!!(this)
+        }
+
         val actionStr = action ?: "unknown"
         val subjectTypeStr = subjectType ?: "unknown"
         val fieldStr = field?.let { " field \"$it\"" } ?: ""
@@ -144,13 +155,6 @@ public class ForbiddenError(
         @JvmStatic
         public fun setDefaultMessage(generator: (ForbiddenError) -> String) {
             defaultMessageGenerator = generator
-        }
-    }
-
-    init {
-        // Use global default message generator if set
-        if (defaultMessageGenerator != null) {
-            customMessage = defaultMessageGenerator!!(this)
         }
     }
 }

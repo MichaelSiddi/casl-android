@@ -35,6 +35,7 @@ public class AbilityBuilder {
      * @param subject The subject type (e.g., "BlogPost", "Comment")
      * @param conditions Optional attribute matchers (e.g., mapOf("authorId" to currentUserId))
      * @param fields Optional field restrictions (e.g., listOf("title", "content"))
+     * @param reason Optional explanation for why this rule exists
      * @return this builder for chaining
      *
      * @throws IllegalArgumentException if action or subject is blank
@@ -44,7 +45,8 @@ public class AbilityBuilder {
         action: String,
         subject: String,
         conditions: Map<String, Any?>? = null,
-        fields: List<String>? = null
+        fields: List<String>? = null,
+        reason: String? = null
     ): AbilityBuilder {
         require(action.isNotBlank()) { "action must not be blank" }
         require(subject.isNotBlank()) { "subject must not be blank" }
@@ -55,7 +57,8 @@ public class AbilityBuilder {
                 subject = subject,
                 conditions = conditions,
                 fields = fields,
-                inverted = false
+                inverted = false,
+                reason = reason
             )
         )
         return this
@@ -70,7 +73,7 @@ public class AbilityBuilder {
      * @return this builder for chaining
      */
     public fun can(action: String, subject: String, field: String): AbilityBuilder {
-        return can(action, subject, null, listOf(field))
+        return can(action, subject, null, listOf(field), null)
     }
 
     /**
@@ -82,7 +85,7 @@ public class AbilityBuilder {
      * @return this builder for chaining
      */
     public fun can(action: String, subject: String, fields: List<String>): AbilityBuilder {
-        return can(action, subject, null, fields)
+        return can(action, subject, null, fields, null)
     }
 
     /**
@@ -92,6 +95,7 @@ public class AbilityBuilder {
      * @param subject The subject type
      * @param conditions Optional attribute matchers
      * @param fields Optional field restrictions
+     * @param reason Optional explanation for why this rule exists
      * @return this builder for chaining
      *
      * @throws IllegalArgumentException if action or subject is blank
@@ -101,7 +105,8 @@ public class AbilityBuilder {
         action: String,
         subject: String,
         conditions: Map<String, Any?>? = null,
-        fields: List<String>? = null
+        fields: List<String>? = null,
+        reason: String? = null
     ): AbilityBuilder {
         require(action.isNotBlank()) { "action must not be blank" }
         require(subject.isNotBlank()) { "subject must not be blank" }
@@ -112,7 +117,8 @@ public class AbilityBuilder {
                 subject = subject,
                 conditions = conditions,
                 fields = fields,
-                inverted = true
+                inverted = true,
+                reason = reason
             )
         )
         return this
@@ -127,7 +133,7 @@ public class AbilityBuilder {
      * @return this builder for chaining
      */
     public fun cannot(action: String, subject: String, field: String): AbilityBuilder {
-        return cannot(action, subject, null, listOf(field))
+        return cannot(action, subject, null, listOf(field), null)
     }
 
     /**
@@ -139,7 +145,7 @@ public class AbilityBuilder {
      * @return this builder for chaining
      */
     public fun cannot(action: String, subject: String, fields: List<String>): AbilityBuilder {
-        return cannot(action, subject, null, fields)
+        return cannot(action, subject, null, fields, null)
     }
 
     /**

@@ -16,7 +16,8 @@ import org.json.JSONObject
  *   "subject": "BlogPost",
  *   "conditions": { "authorId": "user123" },
  *   "fields": ["title", "content"],
- *   "inverted": false
+ *   "inverted": false,
+ *   "reason": "No credit card provided"
  * }
  * ```
  *
@@ -33,13 +34,15 @@ import org.json.JSONObject
  * @property conditions Optional attribute matchers for conditional authorization
  * @property fields Optional field restrictions (null means all fields)
  * @property inverted True for "cannot" rules, false for "can" rules
+ * @property reason Optional explanation for why the rule exists (typically used with inverted rules)
  */
 public data class RawRule(
     val action: Any, // Can be String or List<String>
     val subject: String,
     val conditions: Map<String, Any?>? = null,
     val fields: List<String>? = null,
-    val inverted: Boolean = false
+    val inverted: Boolean = false,
+    val reason: String? = null
 ) {
     init {
         when (action) {
@@ -96,6 +99,10 @@ public data class RawRule(
 
         jsonObject.put("inverted", inverted)
 
+        reason?.let {
+            jsonObject.put("reason", it)
+        }
+
         return jsonObject.toString()
     }
 
@@ -123,7 +130,8 @@ public data class RawRule(
             subjectType = subject,
             conditions = conditions,
             fields = fields?.toSet(),
-            inverted = inverted
+            inverted = inverted,
+            reason = reason
         )
     }
 
@@ -163,13 +171,15 @@ public data class RawRule(
             } else null
 
             val inverted = jsonObject.optBoolean("inverted", false)
+            val reason = if (jsonObject.has("reason")) jsonObject.getString("reason") else null
 
             return RawRule(
                 action = action,
                 subject = subject,
                 conditions = conditions,
                 fields = fields,
-                inverted = inverted
+                inverted = inverted,
+                reason = reason
             )
         }
 
