@@ -69,6 +69,44 @@ public class Ability internal constructor(
     }
 
     /**
+     * Check if action is permitted on a JSONObject subject.
+     *
+     * This overload automatically converts the JSONObject to a Map and creates
+     * a ForcedSubject with the specified type.
+     *
+     * Example (Kotlin):
+     * ```kotlin
+     * val postJson = JSONObject("""{"author": {"id": 123}}""")
+     * val canUpdate = ability.can("update", "Post", postJson)
+     * ```
+     *
+     * Example (Java):
+     * ```java
+     * JSONObject postJson = new JSONObject("{\"author\": {\"id\": 123}}");
+     * boolean canUpdate = ability.can("update", "Post", postJson);
+     * ```
+     *
+     * @param action The action to check (e.g., "read", "update", "delete")
+     * @param subjectType The subject type name (e.g., "Post", "User")
+     * @param json The JSONObject containing the subject's attributes
+     * @param field Optional field name for field-level permissions
+     * @return true if permitted, false otherwise (default deny)
+     *
+     * @throws IllegalArgumentException if action or subjectType is blank
+     */
+    @JvmOverloads
+    public fun can(
+        action: String,
+        subjectType: String,
+        json: org.json.JSONObject,
+        field: String? = null
+    ): Boolean {
+        require(subjectType.isNotBlank()) { "subjectType must not be blank" }
+        val subject = subjectFromJson(subjectType, json)
+        return can(action, subject, field)
+    }
+
+    /**
      * Check if action is prohibited on subject. Opposite of can().
      *
      * @param action The action to check
@@ -81,6 +119,36 @@ public class Ability internal constructor(
     @JvmOverloads
     public fun cannot(action: String, subject: Any?, field: String? = null): Boolean {
         return !can(action, subject, field)
+    }
+
+    /**
+     * Check if action is prohibited on a JSONObject subject.
+     *
+     * This overload automatically converts the JSONObject to a Map and creates
+     * a ForcedSubject with the specified type.
+     *
+     * Example:
+     * ```kotlin
+     * val postJson = JSONObject("""{"author": {"id": 123}}""")
+     * val cannotUpdate = ability.cannot("update", "Post", postJson)
+     * ```
+     *
+     * @param action The action to check
+     * @param subjectType The subject type name
+     * @param json The JSONObject containing the subject's attributes
+     * @param field Optional field name for field-level permissions
+     * @return true if prohibited, false otherwise
+     *
+     * @throws IllegalArgumentException if action or subjectType is blank
+     */
+    @JvmOverloads
+    public fun cannot(
+        action: String,
+        subjectType: String,
+        json: org.json.JSONObject,
+        field: String? = null
+    ): Boolean {
+        return !can(action, subjectType, json, field)
     }
 
     /**
