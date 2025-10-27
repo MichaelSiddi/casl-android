@@ -20,24 +20,55 @@ import org.json.JSONObject
  * }
  * ```
  *
- * @property action The action this rule applies to (e.g., "read", "update", "delete")
+ * Or with multiple actions:
+ * ```json
+ * {
+ *   "action": ["read", "update"],
+ *   "subject": "BlogPost"
+ * }
+ * ```
+ *
+ * @property action The action(s) this rule applies to (single string or list of strings)
  * @property subject The subject type this rule applies to (e.g., "BlogPost", "Comment")
  * @property conditions Optional attribute matchers for conditional authorization
  * @property fields Optional field restrictions (null means all fields)
  * @property inverted True for "cannot" rules, false for "can" rules
  */
 public data class RawRule(
-    val action: String,
+    val action: Any, // Can be String or List<String>
     val subject: String,
     val conditions: Map<String, Any?>? = null,
     val fields: List<String>? = null,
     val inverted: Boolean = false
 ) {
     init {
-        require(action.isNotBlank()) { "action must not be blank" }
+        when (action) {
+            is String -> require(action.isNotBlank()) { "action must not be blank" }
+            is List<*> -> {
+                require(action.isNotEmpty()) { "action list must not be empty" }
+                require(action.all { it is String && it.isNotBlank() }) {
+                    "all actions in list must be non-blank strings"
+                }
+            }
+            else -> throw IllegalArgumentException("action must be a String or List<String>")
+        }
         require(subject.isNotBlank()) { "subject must not be blank" }
         require(fields == null || fields.isNotEmpty()) {
             "fields must not be empty if specified"
+        }
+    }
+
+    /**
+     * Get actions as a list (normalizes single action to list).
+     */
+    internal fun getActions(): List<String> {
+        return when (action) {
+            is String -> listOf(action)
+            is List<*> -> {
+                @Suppress("UNCHECKED_CAST")
+                action as List<String>
+            }
+            else -> emptyList()
         }
     }
 
@@ -48,7 +79,11 @@ public data class RawRule(
      */
     public fun toJson(): String {
         val jsonObject = JSONObject()
-        jsonObject.put("action", action)
+        // Handle both string and list actions
+        when (action) {
+            is String -> jsonObject.put("action", action)
+            is List<*> -> jsonObject.put("action", JSONArray(action))
+        }
         jsonObject.put("subject", subject)
 
         conditions?.let {
@@ -66,6 +101,8 @@ public data class RawRule(
 
     /**
      * Convert to internal Rule representation.
+     * Note: This keeps the action as-is (String or List<String>).
+     * The Ability class will handle expanding array actions during indexing.
      *
      * @return Rule instance
      */
@@ -98,7 +135,12 @@ public data class RawRule(
          * Parse RawRule from JSONObject.
          */
         private fun fromJsonObject(jsonObject: JSONObject): RawRule {
-            val action = jsonObject.getString("action")
+            // Handle both string and array actions
+            val action: Any = when (val actionValue = jsonObject.get("action")) {
+                is String -> actionValue
+                is JSONArray -> jsonArrayToList(actionValue)
+                else -> throw IllegalArgumentException("action must be a string or array")
+            }
             val subject = jsonObject.getString("subject")
 
             val conditions = if (jsonObject.has("conditions")) {

@@ -51,6 +51,9 @@ internal class RuleIndex private constructor(
         /**
          * Build RuleIndex from list of rules.
          *
+         * Expands rules with array actions into multiple index entries
+         * (one per action), similar to casl-js implementation.
+         *
          * @param rules List of internal Rule objects
          * @return New RuleIndex instance
          */
@@ -59,16 +62,22 @@ internal class RuleIndex private constructor(
             val fieldRulesMap = mutableMapOf<String, MutableMap<String, MutableList<Rule>>>()
 
             rules.forEach { rule ->
-                val key = "${rule.action}:${rule.subjectType}"
+                // Get actions as list (handles both String and List<String>)
+                val actions = rule.getActions()
 
-                if (rule.fields == null) {
-                    // Resource-level rule
-                    resourceRulesMap.getOrPut(key) { mutableListOf() }.add(rule)
-                } else {
-                    // Field-level rule
-                    rule.fields.forEach { field ->
-                        val fieldMap = fieldRulesMap.getOrPut(field) { mutableMapOf() }
-                        fieldMap.getOrPut(key) { mutableListOf() }.add(rule)
+                // Create index entries for each action
+                actions.forEach { action ->
+                    val key = "${action}:${rule.subjectType}"
+
+                    if (rule.fields == null) {
+                        // Resource-level rule
+                        resourceRulesMap.getOrPut(key) { mutableListOf() }.add(rule)
+                    } else {
+                        // Field-level rule
+                        rule.fields.forEach { field ->
+                            val fieldMap = fieldRulesMap.getOrPut(field) { mutableMapOf() }
+                            fieldMap.getOrPut(key) { mutableListOf() }.add(rule)
+                        }
                     }
                 }
             }

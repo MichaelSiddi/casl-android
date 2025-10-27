@@ -109,4 +109,43 @@ class AbilityTest {
         assertTrue(ability.can("read", "Comment"))
         assertFalse(ability.can("read", "User"))
     }
+
+    @Test
+    fun `array actions are validated correctly`() {
+        // Create a rule with array-based actions
+        val rawRule = RawRule(
+            action = listOf("change-avatar", "enable-mfa"),
+            subject = "User"
+        )
+
+        val ability = Ability.fromRules(listOf(rawRule))
+
+        // Both actions in the array should be allowed
+        assertTrue(ability.can("change-avatar", "User"), "Should allow change-avatar action")
+        assertTrue(ability.can("enable-mfa", "User"), "Should allow enable-mfa action")
+
+        // Other actions should still be denied
+        assertFalse(ability.can("delete", "User"), "Should not allow delete action")
+        assertFalse(ability.can("read", "User"), "Should not allow read action")
+    }
+
+    // Note: JSON serialization tests are covered by RawRuleTest
+    // These would require Android framework mocking for JSONObject
+
+    @Test
+    fun `mixed single and array actions work together`() {
+        val rule1 = RawRule(action = "read", subject = "BlogPost")
+        val rule2 = RawRule(action = listOf("create", "update"), subject = "Comment")
+
+        val ability = Ability.fromRules(listOf(rule1, rule2))
+
+        // Single action rule
+        assertTrue(ability.can("read", "BlogPost"), "Should allow read on BlogPost")
+        assertFalse(ability.can("write", "BlogPost"), "Should not allow write on BlogPost")
+
+        // Array action rule
+        assertTrue(ability.can("create", "Comment"), "Should allow create on Comment")
+        assertTrue(ability.can("update", "Comment"), "Should allow update on Comment")
+        assertFalse(ability.can("delete", "Comment"), "Should not allow delete on Comment")
+    }
 }
