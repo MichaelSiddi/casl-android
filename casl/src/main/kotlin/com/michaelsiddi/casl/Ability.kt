@@ -40,6 +40,8 @@ public class Ability internal constructor(
     @Volatile
     private var ruleIndex: RuleIndex = RuleIndex.fromRules(rules, options)
 
+    private val eventEmitter = EventEmitter()
+
     /**
      * Check if action is permitted on subject.
      *
@@ -118,6 +120,7 @@ public class Ability internal constructor(
     /**
      * Replace all rules atomically. Thread-safe.
      *
+     * Emits UPDATE event before updating, and UPDATED event after.
      * Ongoing permission checks continue using the old rule set.
      * New permission checks use the new rule set immediately after update completes.
      *
@@ -126,10 +129,41 @@ public class Ability internal constructor(
      * @throws IllegalStateException if rules cannot be applied
      */
     public fun update(rawRules: List<RawRule>) {
+        // Emit UPDATE event before changing rules
+        eventEmitter.emit(EventType.UPDATE, UpdateEvent(this, rawRules))
+
         synchronized(this) {
-            val internalRules = rawRules.map { it.toRule() }
-            ruleIndex = RuleIndex.fromRules(internalRules)
+            val internalRules = rawRules.map { it.toRule(options.resolveAction) }
+            ruleIndex = RuleIndex.fromRules(internalRules, options)
         }
+
+        // Emit UPDATED event after rules are changed
+        eventEmitter.emit(EventType.UPDATED, UpdateEvent(this, rawRules))
+    }
+
+    /**
+     * Subscribe to ability events.
+     *
+     * Available events:
+     * - UPDATE: fired before rules are updated
+     * - UPDATED: fired after rules have been updated
+     *
+     * Example:
+     * ```kotlin
+     * val unsubscribe = ability.on(EventType.UPDATED) { event ->
+     *     println("Rules updated: ${event.rules.size} rules")
+     * }
+     *
+     * // Later, to unsubscribe:
+     * unsubscribe()
+     * ```
+     *
+     * @param eventType The event type to listen to
+     * @param handler The handler function called when event fires
+     * @return Function to unsubscribe this handler
+     */
+    public fun on(eventType: EventType, handler: EventHandler): Unsubscribe {
+        return eventEmitter.on(eventType, handler)
     }
 
     /**
