@@ -39,11 +39,13 @@ public object ConditionMatcher {
      * Extract fields from a subject as a map.
      *
      * Supports:
+     * - ForcedSubject instances (created with subject() helper)
      * - Kotlin data classes (via reflection)
      * - Java POJOs (via reflection)
      * - Maps (directly)
      */
     private fun extractFields(subject: Any): Map<String, Any?> = when (subject) {
+        is ForcedSubject -> subject.toMap()
         is Map<*, *> -> subject.mapKeys { it.key.toString() }.mapValues { it.value }
         else -> {
             try {
