@@ -100,10 +100,19 @@ internal data class Rule(
      *
      * @param field The field name to check (null means resource-level check)
      * @return true if rule applies to this field
+     *
+     * Note: When field is null (resource-level check) and this rule has field restrictions,
+     * inverted rules return false to allow checking to continue to regular rules.
      */
     fun matchesField(field: String?): Boolean {
         if (fields == null) return true // No field restriction = applies to all fields
-        if (field == null) return true // Resource-level check = applies
+
+        if (field == null) {
+            // Resource-level check: ignore inverted rules with field restrictions
+            // They disallow specific fields, so we continue looking for regular rules
+            return !inverted
+        }
+
         return field in fields
     }
 

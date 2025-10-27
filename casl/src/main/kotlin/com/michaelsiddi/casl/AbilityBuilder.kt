@@ -62,6 +62,30 @@ public class AbilityBuilder {
     }
 
     /**
+     * Add a positive permission rule with a single field.
+     *
+     * @param action The action to permit
+     * @param subject The subject type
+     * @param field Single field restriction
+     * @return this builder for chaining
+     */
+    public fun can(action: String, subject: String, field: String): AbilityBuilder {
+        return can(action, subject, null, listOf(field))
+    }
+
+    /**
+     * Add a positive permission rule with field list.
+     *
+     * @param action The action to permit
+     * @param subject The subject type
+     * @param fields List of field restrictions
+     * @return this builder for chaining
+     */
+    public fun can(action: String, subject: String, fields: List<String>): AbilityBuilder {
+        return can(action, subject, null, fields)
+    }
+
+    /**
      * Add a negative permission rule (prohibition).
      *
      * @param action The action to prohibit
@@ -92,6 +116,30 @@ public class AbilityBuilder {
             )
         )
         return this
+    }
+
+    /**
+     * Add a negative permission rule with a single field.
+     *
+     * @param action The action to prohibit
+     * @param subject The subject type
+     * @param field Single field restriction
+     * @return this builder for chaining
+     */
+    public fun cannot(action: String, subject: String, field: String): AbilityBuilder {
+        return cannot(action, subject, null, listOf(field))
+    }
+
+    /**
+     * Add a negative permission rule with field list.
+     *
+     * @param action The action to prohibit
+     * @param subject The subject type
+     * @param fields List of field restrictions
+     * @return this builder for chaining
+     */
+    public fun cannot(action: String, subject: String, fields: List<String>): AbilityBuilder {
+        return cannot(action, subject, null, fields)
     }
 
     /**
