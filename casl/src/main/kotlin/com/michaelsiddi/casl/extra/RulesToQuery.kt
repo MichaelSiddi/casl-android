@@ -65,6 +65,8 @@ public fun <T> rulesToQuery(
     val or = mutableListOf<T>()
     val rules = ability.rulesFor(action, subjectType)
 
+    var foundUnconditionalAllow = false
+
     for (rule in rules) {
         val list = if (rule.inverted) and else or
 
@@ -78,30 +80,31 @@ public fun <T> rulesToQuery(
                 break
             } else {
                 // Regular rule without conditions allows everything
-                // Return early with just the inverted constraints
+                // Clear previous $or conditions but continue processing $and (cannot rules)
                 // Example:
                 // can('read', 'Post', { id: 1 })
                 // can('read', 'Post')  // Allows all
                 // cannot('read', 'Post', { status: 'draft' })
-                return if (and.isNotEmpty()) {
-                    AbilityQuery(`$and` = and)
-                } else {
-                    AbilityQuery()  // No conditions = allow all
-                }
+                or.clear()
+                foundUnconditionalAllow = true
             }
         } else {
-            list.add(convert(rule))
+            // Only add to $or if we haven't found unconditional allow yet
+            if (!foundUnconditionalAllow || rule.inverted) {
+                list.add(convert(rule))
+            }
         }
     }
 
-    // If there are no positive conditions, user has no access
-    if (or.isEmpty()) return null
+    // If there are no positive conditions and no unconditional allow, user has no access
+    if (or.isEmpty() && !foundUnconditionalAllow) return null
 
     // Return combined query
-    return if (and.isNotEmpty()) {
-        AbilityQuery(`$or` = or, `$and` = and)
-    } else {
-        AbilityQuery(`$or` = or)
+    return when {
+        or.isEmpty() && and.isEmpty() -> AbilityQuery() // Unconditional allow with no restrictions
+        or.isEmpty() -> AbilityQuery(`$and` = and) // Unconditional allow with restrictions
+        and.isEmpty() -> AbilityQuery(`$or` = or) // Conditional allow with no restrictions
+        else -> AbilityQuery(`$or` = or, `$and` = and) // Conditional allow with restrictions
     }
 }
 

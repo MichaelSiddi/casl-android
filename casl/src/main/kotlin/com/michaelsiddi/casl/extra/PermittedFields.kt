@@ -60,15 +60,14 @@ public fun permittedFieldsOf(
     val rules = ability.rulesFor(action, subjectType)
     val uniqueFields = mutableSetOf<String>()
 
-    // Process rules in reverse order (last-match-wins)
-    // But build the set forward, using add/remove based on inverted flag
-    var i = rules.size
-    while (i-- > 0) {
-        val rule = rules[i]
-
-        // Check if rule matches the subject instance (if it has conditions)
+    // Process rules in forward order (last-match-wins applies field changes cumulatively)
+    for (rule in rules) {
+        // For type-only checks, match all rules
+        // For instance checks, only process rules that match conditions
         val matchesSubject = if (rule.conditions != null && subject !is String) {
-            ability.can(action, subject)  // Use ability to check conditions
+            // Check if this specific rule's conditions match the subject
+            // We need to check the conditions directly
+            com.michaelsiddi.casl.ConditionMatcher.matches(rule.conditions, subject)
         } else {
             true
         }
