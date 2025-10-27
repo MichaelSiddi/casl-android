@@ -101,14 +101,25 @@ public data class RawRule(
 
     /**
      * Convert to internal Rule representation.
-     * Note: This keeps the action as-is (String or List<String>).
+     * Note: This resolves action aliases and keeps the action as-is (String or List<String>).
      * The Ability class will handle expanding array actions during indexing.
      *
+     * @param resolver Function to resolve action aliases (default: identity, no expansion)
      * @return Rule instance
      */
-    internal fun toRule(): Rule {
+    internal fun toRule(resolver: AliasResolver = identityResolver): Rule {
+        // Resolve aliases first - resolver always returns a list
+        val resolvedActions = resolver(action)
+
+        // Convert resolved list back to the appropriate format for Rule
+        val finalAction: Any = if (resolvedActions.size == 1) {
+            resolvedActions[0]  // Single action as String
+        } else {
+            resolvedActions  // Multiple actions as List<String>
+        }
+
         return Rule(
-            action = action,
+            action = finalAction,
             subjectType = subject,
             conditions = conditions,
             fields = fields?.toSet(),

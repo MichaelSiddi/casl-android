@@ -32,10 +32,13 @@ import kotlin.jvm.JvmStatic
  * }
  * ```
  */
-public class Ability internal constructor(rules: List<Rule>) {
+public class Ability internal constructor(
+    rules: List<Rule>,
+    private val options: AbilityOptions = AbilityOptions()
+) {
 
     @Volatile
-    private var ruleIndex: RuleIndex = RuleIndex.fromRules(rules)
+    private var ruleIndex: RuleIndex = RuleIndex.fromRules(rules, options)
 
     /**
      * Check if action is permitted on subject.
@@ -154,13 +157,18 @@ public class Ability internal constructor(rules: List<Rule>) {
          * Create Ability from pre-existing rules.
          *
          * @param rawRules List of rules in serializable format
+         * @param options Optional configuration for alias resolution and custom options
          * @return Ability instance with the given rules
          * @throws IllegalArgumentException if any rule is invalid
          */
         @JvmStatic
-        public fun fromRules(rawRules: List<RawRule>): Ability {
-            val internalRules = rawRules.map { it.toRule() }
-            return Ability(internalRules)
+        @JvmOverloads
+        public fun fromRules(
+            rawRules: List<RawRule>,
+            options: AbilityOptions = AbilityOptions()
+        ): Ability {
+            val internalRules = rawRules.map { it.toRule(options.resolveAction) }
+            return Ability(internalRules, options)
         }
     }
 }

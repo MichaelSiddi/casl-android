@@ -11,7 +11,8 @@ package com.michaelsiddi.casl
 internal class RuleIndex private constructor(
     private val resourceRules: Map<String, List<Rule>>,
     private val fieldRules: Map<String, Map<String, List<Rule>>>,
-    private val allRules: List<Rule>
+    private val allRules: List<Rule>,
+    private val options: AbilityOptions = AbilityOptions()
 ) {
 
     /**
@@ -55,9 +56,10 @@ internal class RuleIndex private constructor(
          * (one per action), similar to casl-js implementation.
          *
          * @param rules List of internal Rule objects
+         * @param options Options for ability configuration
          * @return New RuleIndex instance
          */
-        fun fromRules(rules: List<Rule>): RuleIndex {
+        fun fromRules(rules: List<Rule>, options: AbilityOptions = AbilityOptions()): RuleIndex {
             val resourceRulesMap = mutableMapOf<String, MutableList<Rule>>()
             val fieldRulesMap = mutableMapOf<String, MutableMap<String, MutableList<Rule>>>()
 
@@ -85,7 +87,8 @@ internal class RuleIndex private constructor(
             return RuleIndex(
                 resourceRules = resourceRulesMap,
                 fieldRules = fieldRulesMap,
-                allRules = rules.toList()
+                allRules = rules.toList(),
+                options = options
             )
         }
 
