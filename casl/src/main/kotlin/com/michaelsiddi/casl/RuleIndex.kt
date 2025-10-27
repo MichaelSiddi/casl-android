@@ -48,6 +48,48 @@ internal class RuleIndex private constructor(
      */
     fun getAllRules(): List<Rule> = allRules
 
+    /**
+     * Get all rules that match the given action and subject type.
+     *
+     * @param action The action to match
+     * @param subjectType The subject type
+     * @param field Optional field name to filter rules
+     * @return List of matching rules in order
+     */
+    fun rulesFor(action: String, subjectType: String, field: String? = null): List<Rule> {
+        // Get all rules that match the action and subject type
+        val matchingRules = allRules.filter { rule ->
+            rule.matchesAction(action) &&
+            rule.matchesSubjectType(subjectType)
+        }
+
+        // Filter by field if specified
+        return if (field != null) {
+            matchingRules.filter { it.matchesField(field) }
+        } else {
+            matchingRules
+        }
+    }
+
+    /**
+     * Get all actions defined for a subject type.
+     *
+     * @param subjectType The subject type
+     * @return Set of action names
+     */
+    fun actionsFor(subjectType: String): Set<String> {
+        val actions = mutableSetOf<String>()
+
+        allRules.forEach { rule ->
+            if (rule.matchesSubjectType(subjectType)) {
+                // Add all actions from this rule
+                actions.addAll(rule.getActions())
+            }
+        }
+
+        return actions
+    }
+
     companion object {
         /**
          * Build RuleIndex from list of rules.

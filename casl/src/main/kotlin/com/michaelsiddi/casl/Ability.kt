@@ -178,6 +178,55 @@ public class Ability internal constructor(
         return snapshot.getAllRules().map { it.toRawRule() }
     }
 
+    /**
+     * Get all rules that match the given action and subject type.
+     *
+     * Returns rules in order of priority (first to last), allowing inspection
+     * of what rules would be considered for a permission check.
+     *
+     * @param action The action to match
+     * @param subjectType The subject type (as string, e.g., "Post")
+     * @param field Optional field name to filter rules
+     * @return List of matching rules
+     */
+    @JvmOverloads
+    public fun rulesFor(action: String, subjectType: String, field: String? = null): List<RawRule> {
+        val snapshot = ruleIndex
+        return snapshot.rulesFor(action, subjectType, field).map { it.toRawRule() }
+    }
+
+    /**
+     * Get all actions defined for a given subject type.
+     *
+     * Useful for building UI that shows what actions a user can perform
+     * on a particular resource type.
+     *
+     * @param subjectType The subject type (as string, e.g., "Post")
+     * @return Set of action names
+     */
+    public fun actionsFor(subjectType: String): Set<String> {
+        val snapshot = ruleIndex
+        return snapshot.actionsFor(subjectType)
+    }
+
+    /**
+     * Get the relevant rule for a specific permission check.
+     *
+     * Returns the rule that would determine the outcome of a can() check,
+     * following last-match-wins precedence. Useful for understanding why
+     * a permission was granted or denied.
+     *
+     * @param action The action to check
+     * @param subject The subject instance or type
+     * @param field Optional field name
+     * @return The relevant rule, or null if no rule matches
+     */
+    @JvmOverloads
+    public fun relevantRuleFor(action: String, subject: Any?, field: String? = null): RawRule? {
+        val snapshot = ruleIndex
+        return snapshot.findMatchingRule(action, subject, field)?.toRawRule()
+    }
+
     public companion object {
         /**
          * Create a new builder for defining rules.
